@@ -6,25 +6,87 @@ Estimates pi for N = 10^2 to 10^7, computes the error |pi_est - pi|,
 and plots error versus N on a log-log scale.
 """
 
+import time
+import random
 import numpy as np
 import matplotlib.pyplot as plt
 
-def estimate_pi_monte_carlo(N: int, seed: int = None) -> float:
+def estimate_pi_vectorized(N: int, seed: int = None) -> float:
     """
-    Estimate pi by drawing N uniform random points in [0, 1]^2.
-    A point (x, y) is inside the quarter circle if x^2 + y^2 <= 1.0.
-    Points exactly on the boundary are included.
+    Vectorized NumPy implementation:
+    Generates N random points in [0, 1]^2 and checks x^2 + y^2 <= 1.0.
     """
     rng = np.random.default_rng(seed)
     x = rng.uniform(0.0, 1.0, size=N)
     y = rng.uniform(0.0, 1.0, size=N)
-    
-    # Check quarter circle condition: x^2 + y^2 <= 1
     inside = (x**2 + y**2) <= 1.0
-    num_inside = np.sum(inside)
+    return 4.0 * np.sum(inside) / N
+
+# Maintain backward compatibility with initial function name
+estimate_pi_monte_carlo = estimate_pi_vectorized
+
+def estimate_pi_python_loop(N: int, seed: int = None) -> float:
+    """
+    Pure Python loop implementation:
+    Generates points one by one in a standard for-loop using the random module.
+    """
+    if seed is not None:
+        random.seed(seed)
+    inside_count = 0
+    for _ in range(N):
+        x = random.random()
+        y = random.random()
+        if x * x + y * y <= 1.0:
+            inside_count += 1
+    return 4.0 * inside_count / N
+
+def compare_timings():
+    """
+    Benchmarks runtime of vectorized NumPy vs pure Python loop across various N.
+    """
+    test_N = [10**2, 10**3, 10**4, 10**5, 10**6, 10**7]
+    print("\n--- Timing Comparison: Vectorized NumPy vs Python Loop ---")
+    print(f"{'N':>12} | {'Vectorized [s]':>16} | {'Python Loop [s]':>16} | {'Speedup':>10}")
+    print("-" * 62)
     
-    pi_estimate = 4.0 * num_inside / N
-    return pi_estimate
+    vec_times = []
+    loop_times = []
+    bench_N = []
+    
+    for N in test_N:
+        # Time vectorized
+        t0 = time.perf_counter()
+        _ = estimate_pi_vectorized(N, seed=42)
+        t_vec = time.perf_counter() - t0
+        vec_times.append(t_vec)
+        bench_N.append(N)
+        
+        # Pure Python loop can be slow for 10^7, but let's test up to 10^7
+        if N <= 10**7:
+            t0 = time.perf_counter()
+            _ = estimate_pi_python_loop(N, seed=42)
+            t_loop = time.perf_counter() - t0
+            loop_times.append(t_loop)
+            speedup = t_loop / t_vec
+            print(f"{N:>12,d} | {t_vec:>16.6f} | {t_loop:>16.6f} | {speedup:>9.1f}x")
+        else:
+            loop_times.append(None)
+            print(f"{N:>12,d} | {t_vec:>16.6f} | {'(skipped)':>16} | {'-':>10}")
+            
+    # Plot timing comparison
+    plt.figure(figsize=(8, 5), dpi=150)
+    plt.loglog(bench_N, vec_times, 'o-', color='#1f77b4', label='Vectorized (NumPy)', linewidth=2)
+    plt.loglog(bench_N[:len(loop_times)], loop_times, 's-', color='#d62728', label='Python Loop', linewidth=2)
+    plt.xlabel('Number of points $N$', fontsize=12)
+    plt.ylabel('Execution time [seconds]', fontsize=12)
+    plt.title('Timing Comparison: Vectorized vs Python Loop', fontsize=13, fontweight='bold')
+    plt.grid(True, which="both", ls="--", alpha=0.6)
+    plt.legend(fontsize=11)
+    plt.tight_layout()
+    timing_plot = "timing_comparison.png"
+    plt.savefig(timing_plot)
+    print(f"Timing plot saved to {timing_plot}")
+
 
 def run_experiment():
     # N values from 10^2 to 10^7
@@ -82,3 +144,4 @@ def run_experiment():
 
 if __name__ == "__main__":
     run_experiment()
+    compare_timings()
