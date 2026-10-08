@@ -134,3 +134,5 @@ Im Skript `faster_convergence.py` wurden alle Verfahren numerisch verglichen und
 - [`mc_pi_error.png`](mc_pi_error.png): Log-Log-Plot des Fehlers vs. $N$ mit $1/\sqrt{N}$-Theorielinie.
 - [`timing_comparison.png`](timing_comparison.png): Laufzeitvergleich Vektorisierung vs. Python-Schleife.
 - [`faster_convergence.png`](faster_convergence.png): Konvergenzvergleich Standard-MC vs. Stratified vs. QMC.
+- [`sampling_patterns.png`](sampling_patterns.png): Visueller 2x2-Vergleich der Punktverteilungen (PRNG, Stratified, Sobol, Halton).
+
